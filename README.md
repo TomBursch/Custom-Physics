@@ -9,7 +9,7 @@ Make sure that you are able to compile Godot 3.1. from sources.
 Create a `customphysics` folder in the `modules` folder of Godots 3.1 source distribution.
 (Re)compile Godot and run the binary, in the settings a new option at `Physics > 3d > Physics Engine` should appear called "CustomPhysics".
 
-##Features
+## Features
 This module only focuses on Rigid body dynamics:
 - unconstrained motion
 - constrained motion
