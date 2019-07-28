@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import os
+from glob import glob
+
+Import('env')
+Import('env_modules')
+
+env_custom = env_modules.Clone()
+
+sources = glob("godot_module_files/*.cpp") + glob("*.cpp")
+
+# Thirdparty source files
+
+if env['builtin_bullet']:
+    # We don't actually build Bullet, because it is built as part of the Bullet module that ships with Godot.
+    # However, we need to add the Bullet folder as an include directory.
+    thirdparty_dir = "#thirdparty/bullet/"
+    env_custom.Append(CPPPATH=[thirdparty_dir])
+
+if ARGUMENTS.get("platform") != "windows":
+	# See https://docs.godotengine.org/en/3.1/development/cpp/custom_modules_in_cpp.html
+	# for the reasoning behind the next few lines. Essentially, we want to build our module as a shared library,
+	# so that modifying files does not trigger a full rebuild (even incremental) of Godot.
+	env_custom.Append(CXXFLAGS='-fPIC')
+	env_custom['LIBS'] = []
+	shared_lib = env_custom.SharedLibrary(target='#bin/customphysics', source=sources)
+	shared_lib_target_name = shared_lib[0].name
+	shared_lib_shim = shared_lib_target_name.rsplit('.', 1)[0]
+	env.Append(LIBS=[shared_lib_shim])
+	env.Append(LIBPATH=['#bin'])
+
+	# Adding this alias makes it easy to rebuild only this module
+	env.Alias('customphysics', '#bin/' + shared_lib_target_name)
+
+	# Add ORIGIN/RPATH, such that the shared library gets picked up from the binary directory on Unix systems
+	env.Append( LINKFLAGS = Split('-z origin') )
+	env.Append( RPATH = env.Literal('\\$$ORIGIN') )
+	
+else:
+	env_custom.add_source_files(env.modules_sources, sources)
